@@ -17,13 +17,14 @@ class Rotor {
   ~Rotor();
   void operator=(s21::Rotor const &other);
   void operator=(s21::Rotor &&other);
-  void make_rotor();
   std::map<char, char> get_rotor();
   void set_rotor(std::string str);
   char get_out_char(char current_ch);
   char get_key(char ch);
 
  private:
+  void make_rotor();
+
   std::map<char, char> rotor_;
 };
 }  // namespace s21

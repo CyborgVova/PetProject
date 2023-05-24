@@ -14,15 +14,6 @@ void s21::Rotor::operator=(s21::Rotor &&other) {
   std::swap(rotor_, other.rotor_);
 }
 
-void s21::Rotor::make_rotor() {
-  std::vector<char> tmp(alphabet);
-  for (int i = 0; i < (int)alphabet.size(); i++) {
-    int random = rand() % tmp.size();
-    rotor_.emplace(tmp[random], alphabet[i]);
-    tmp.erase(tmp.begin() + random);
-  }
-}
-
 std::map<char, char> s21::Rotor::get_rotor() { return rotor_; }
 
 void s21::Rotor::set_rotor(std::string str) {
@@ -39,4 +30,13 @@ char s21::Rotor::get_key(char ch) {
     }
   }
   return ch;
+}
+
+void s21::Rotor::make_rotor() {
+  std::vector<char> tmp(alphabet);
+  for (int i = 0; i < (int)alphabet.size(); i++) {
+    int random = rand() % tmp.size();
+    rotor_.emplace(tmp[random], alphabet[i]);
+    tmp.erase(tmp.begin() + random);
+  }
 }

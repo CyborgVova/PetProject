@@ -1,9 +1,9 @@
 #ifndef SRC_ENIGMA_REFLECTOR_H_
 #define SRC_ENIGMA_REFLECTOR_H_
+#include <ctime>
 #include <iostream>
 #include <map>
 #include <set>
-#include <time.h>
 
 namespace s21 {
 static const std::set<char> alphabet_set = {
@@ -18,11 +18,12 @@ class Reflector {
   ~Reflector();
   void operator=(s21::Reflector const &other);
   void operator=(s21::Reflector &&other);
-  void make_reflector();
   std::map<char, char> get_reflector();
   void set_reflector(std::string str);
 
  private:
+  void make_reflector();
+
   std::map<char, char> reflector_;
 };
 }  // namespace s21
