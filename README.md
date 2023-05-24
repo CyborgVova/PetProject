@@ -1,3 +1,3 @@
 # PetProject
 Interesting projects 
-- Programming implementation original encoded machine 'Enigma'
+1. Programming implementation original encoded machine 'Enigma'.
