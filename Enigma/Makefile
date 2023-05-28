@@ -11,6 +11,6 @@ enigma:
 			$(CC) $(FLAGS) $(SRC) -o enigma
 
 clean:
-			rm -rf ./enigma
+			rm -rf ./enigma *_encoded *_decoded *.cfg
 
 re:			clean enigma app

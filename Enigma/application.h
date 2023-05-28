@@ -1,9 +1,6 @@
 #ifndef SRC_ENIGMA_APPLICATION_H_
 #define SRC_ENIGMA_APPLICATION_H_
-#include <climits>
-#include <fstream>
-#include <iostream>
-#include <thread>
+#define S21_INT_MAX 0x7FFFFFFF
 
 #include "enigma.h"
 

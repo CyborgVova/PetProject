@@ -114,7 +114,7 @@ void s21::Application::choose_job_menu(s21::Enigma &enigma) {
 
 void s21::Application::clear_cin() {
   std::cin.clear();
-  std::cin.ignore(INT_MAX, '\n');
+  std::cin.ignore(S21_INT_MAX, '\n');
 }
 
 void s21::Application::erase_bracket(std::string &path_to_file) {
@@ -142,7 +142,7 @@ s21::Enigma s21::Application::create_enigma() {
 }
 
 s21::Enigma s21::Application::get_enigma_from_file(std::string path_to_file) {
-  std::ifstream fin(path_to_file);
+  std::ifstream fin(path_to_file, std::ios::binary);
   if (!fin.is_open()) throw std::invalid_argument("'Path is not valid'\n");
   int num_rotors;
   fin >> num_rotors;
@@ -159,7 +159,7 @@ s21::Enigma s21::Application::get_enigma_from_file(std::string path_to_file) {
 }
 
 void s21::Application::save_cfg(s21::Enigma &enigma, std::string path_to_file) {
-  std::ofstream fout(path_to_file);
+  std::ofstream fout(path_to_file, std::ios::binary);
   if (!fout.is_open())
     throw std::invalid_argument("'Failed to create configuring file'");
   fout << enigma.get_number_rotors() << std::endl;
@@ -169,17 +169,18 @@ void s21::Application::save_cfg(s21::Enigma &enigma, std::string path_to_file) {
   for (size_t i = 0; i < enigma.get_number_rotors(); i++) {
     for (size_t j = 0; j < enigma.get_reflector()->get_reflector().size();
          j++) {
-      fout << enigma.get_rotors()[i].get_rotor()[j + 'A'];
+      fout << enigma.get_rotors()[i].get_rotor()[j + *s21::alphabet.begin()];
     }
     fout << std::endl;
   }
   for (size_t i = 0; i < enigma.get_reflector()->get_reflector().size(); i++) {
-    fout << enigma.get_reflector()->get_reflector()[i + 'A'];
+    fout << enigma.get_reflector()->get_reflector()[i + *s21::alphabet.begin()];
   }
 }
 
 std::string s21::Application::encoded_to_decoded(std::string path_to_file) {
-  path_to_file.erase(path_to_file.find("_encoded"));
+  auto responce = path_to_file.find("_encoded");
+  if (responce != path_to_file.npos) path_to_file.erase(responce);
   path_to_file += "_decoded";
   return path_to_file;
 }
@@ -190,16 +191,15 @@ void s21::Application::to_encoded(s21::Enigma &enigma) {
   std::cin >> path_to_file;
   erase_bracket(path_to_file);
   printf("%c\033[2J", 27);
-  std::ifstream fin(path_to_file);
+  std::ifstream fin(path_to_file, std::ios::binary);
   if (!fin.is_open()) throw std::invalid_argument("'Path is not valid'\n");
-  std::ofstream fout(path_to_file + "_encoded");
+  std::ofstream fout(path_to_file + "_encoded", std::ios::binary);
   if (!fout.is_open())
     throw std::invalid_argument("'Failed to create encoded file'\n");
   char ch;
   while (fin >> std::noskipws >> ch) {
-    if (ch >= 'A' && ch <= 'Z') {
+    if (ch >= *s21::alphabet.begin() && ch <= *--s21::alphabet.end())
       ch = enigma.coder(ch);
-    }
     fout << ch;
   }
   fin.close();
@@ -214,13 +214,14 @@ void s21::Application::to_decoded(s21::Enigma &enigma) {
   std::cin >> path_to_file;
   erase_bracket(path_to_file);
   printf("%c\033[2J", 27);
-  std::ifstream fin(path_to_file);
+  std::ifstream fin(path_to_file, std::ios::binary);
   std::string decoded_file = encoded_to_decoded(path_to_file);
-  std::ofstream fout(decoded_file);
+  std::ofstream fout(decoded_file, std::ios::binary);
   if (!fin.is_open()) throw std::invalid_argument("'Path is not valid'\n");
   char ch;
   while (fin >> std::noskipws >> ch) {
-    if (ch >= 'A' && ch <= 'Z') ch = enigma.coder(ch);
+    if (ch >= *s21::alphabet.begin() && ch <= *--s21::alphabet.end())
+      ch = enigma.coder(ch);
     fout << ch;
   }
   std::cout << "Файл расшифрован: '" << decoded_file << "'\n" << std::endl;

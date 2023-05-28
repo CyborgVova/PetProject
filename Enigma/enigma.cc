@@ -51,10 +51,14 @@ char s21::Enigma::coder(char &ch) {
 
 void s21::Enigma::initial_state() {
   size_t count = number_rotors_;
-  while (count--) state_.push_back((rand() % 26) + 'A');
+  while (count--)
+    state_.push_back((rand() % reflector_->get_reflector().size()) +
+                     *s21::alphabet.begin());
 }
 
-bool s21::Enigma::check_state(char ch) { return ch == 'Z' ? true : false; }
+bool s21::Enigma::check_state(char ch) {
+  return ch == *--s21::alphabet.end() ? true : false;
+}
 
 void s21::Enigma::clear_enigma() {
   if (number_rotors_) {
@@ -67,13 +71,15 @@ void s21::Enigma::clear_enigma() {
 
 void s21::Enigma::first_step(char &ch) {
   rotors_rotation();
-  ch = counter_how_add((state_[0] - 'A') + (ch - 'A')) + 'A';
+  ch = counter_how_add((state_[0] - *s21::alphabet.begin()) +
+                       (ch - *s21::alphabet.begin())) +
+       *s21::alphabet.begin();
 }
 
 void s21::Enigma::rotors_rotation() {
   for (size_t i = 0; i < number_rotors_; ++i) {
     if (check_state(state_[i])) {
-      state_[i] = 'A';
+      state_[i] = *s21::alphabet.begin();
     } else {
       state_[i] += 1;
       break;
@@ -82,37 +88,46 @@ void s21::Enigma::rotors_rotation() {
 }
 
 void s21::Enigma::rotor_to_reflector(char &ch) {
-  ch = counter_how_add((ch - 'A') + (state_[1] - state_[0])) + 'A';
+  ch =
+      counter_how_add((ch - *s21::alphabet.begin()) + (state_[1] - state_[0])) +
+      *s21::alphabet.begin();
   for (size_t i = 1; i < state_.size(); i++) {
     ch = rotors_[i].get_rotor()[ch];
     if (i + 1 < state_.size()) {
-      ch = counter_how_add((ch - 'A') + (state_[i + 1] - state_[i])) + 'A';
+      ch = counter_how_add((ch - *s21::alphabet.begin()) +
+                           (state_[i + 1] - state_[i])) +
+           *s21::alphabet.begin();
     }
   }
 }
 
 void s21::Enigma::after_reflector(char &ch) {
-  ch = counter_how_add(ch - state_[state_.size() - 1]) + 'A';
+  ch = counter_how_add(ch - state_[state_.size() - 1]) + *s21::alphabet.begin();
   ch = reflector_->get_reflector()[ch];
 }
 
 void s21::Enigma::rotor_back_and_out(char &ch) {
   int rotor_index = state_.size() - 1;
   s21::Rotor r = rotors_[rotor_index];
-  ch = counter_how_add((ch - 'A') + (state_[rotor_index] - 'A')) + 'A';
+  ch = counter_how_add((ch - *s21::alphabet.begin()) +
+                       (state_[rotor_index] - *s21::alphabet.begin())) +
+       *s21::alphabet.begin();
   ch = r.get_key(ch);
   if (rotor_index) {
     for (int i = rotor_index - 1; i >= 0; --i) {
       r = rotors_[i];
-      ch = counter_how_add((ch - 'A') - (state_[i + 1] - state_[i])) + 'A';
+      ch = counter_how_add((ch - *s21::alphabet.begin()) -
+                           (state_[i + 1] - state_[i])) +
+           *s21::alphabet.begin();
       ch = r.get_key(ch);
     }
   }
-  ch = counter_how_add(ch - state_[0]) + 'A';
+  ch = counter_how_add(ch - state_[0]) + *s21::alphabet.begin();
 }
 
 char s21::Enigma::counter_how_add(int const &number) {
-  return number < 0 ? 26 - abs(number) % 26 : number % 26;
+  return number < 0 ? s21::alphabet.size() - abs(number) % s21::alphabet.size()
+                    : number % s21::alphabet.size();
 }
 
 void s21::Enigma::move_enigma(s21::Enigma &other) {

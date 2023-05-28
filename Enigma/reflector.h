@@ -1,14 +1,11 @@
 #ifndef SRC_ENIGMA_REFLECTOR_H_
 #define SRC_ENIGMA_REFLECTOR_H_
-#include <ctime>
-#include <iostream>
-#include <map>
-#include <set>
+
+#include "rotor.h"
 
 namespace s21 {
-static const std::set<char> alphabet_set = {
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
+static const std::set<char> alphabet_set = {s21::alphabet.begin(),
+                                            s21::alphabet.end()};
 
 class Reflector {
  public:

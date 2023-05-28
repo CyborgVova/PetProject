@@ -1,9 +1,7 @@
 #ifndef SRC_ENIGMA_ENIGMA_H_
 #define SRC_ENIGMA_ENIGMA_H_
-#include <iostream>
 
 #include "reflector.h"
-#include "rotor.h"
 
 namespace s21 {
 class Enigma {

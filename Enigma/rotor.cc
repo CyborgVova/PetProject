@@ -17,7 +17,8 @@ void s21::Rotor::operator=(s21::Rotor &&other) {
 std::map<char, char> s21::Rotor::get_rotor() { return rotor_; }
 
 void s21::Rotor::set_rotor(std::string str) {
-  for (size_t i = 0; i < rotor_.size(); i++) rotor_[i + 'A'] = str[i];
+  for (size_t i = 0; i < rotor_.size(); i++)
+    rotor_[i + *s21::alphabet.begin()] = str[i];
 }
 
 char s21::Rotor::get_out_char(char current_ch) { return rotor_.at(current_ch); }
@@ -34,7 +35,7 @@ char s21::Rotor::get_key(char ch) {
 
 void s21::Rotor::make_rotor() {
   std::vector<char> tmp(alphabet);
-  for (int i = 0; i < (int)alphabet.size(); i++) {
+  for (size_t i = 0; i < alphabet.size(); i++) {
     int random = rand() % tmp.size();
     rotor_.emplace(tmp[random], alphabet[i]);
     tmp.erase(tmp.begin() + random);
