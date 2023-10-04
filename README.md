@@ -1,3 +1,4 @@
 # PetProject
-Interesting projects 
-1. Programming implementation original encoded machine 'Enigma'.
+### Interesting projects
+-  Projects are in the develop branch
+
