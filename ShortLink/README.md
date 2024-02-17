@@ -28,11 +28,11 @@
 
 #### GET
 
-- curl -X GET http://localhost:8080/short-length-link/\<short link\>
+- curl -X GET http://localhost:8080/short-length-link/<short_link>
   -H 'Accept: application/json'
 
 #### POST
 
-- curl -X POST http://localhost:8080/full-length-link/
+- curl -X POST http://localhost:8080/full-length-link
   -H 'Content-Type: application/json'
-  -d '{"longLink: \<URL\>"}'
+  -d '{"longLink": "\<URL\>"}'
