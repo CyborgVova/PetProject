@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option go_package = "./proto";
+
+import "google/api/annotations.proto";
+
+service LinkBuilder {
+    rpc Get (ShortLink) returns (LongLink) {
+        option (google.api.http) = {
+            get:"/short-length-link/{short_link}"
+        };
+    }
+    rpc Post (LongLink) returns (ShortLink) {
+        option (google.api.http) = {
+            post:"/full-length-link"
+            body:"*"
+        };
+    }
+}
+
+message ShortLink {
+    string short_link = 1;
+}
+
+message LongLink {
+    string long_link = 1;
+}
