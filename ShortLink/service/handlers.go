@@ -17,13 +17,30 @@ var (
 
 const template = "_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
+type Randomable interface {
+	String10()
+}
+
+type BaseHandle interface {
+	Finder(dest interface{}, left, right string)
+	Creator(value interface{})
+}
+
 type Server struct {
 	pb.UnimplementedLinkBuilderServer
 	Storage string
 	DB      *gorm.DB
 }
 
-func String10() string {
+func (s *Server) Finder(dest interface{}, left, right string) {
+	s.DB.Find(dest, left, right)
+}
+
+func (s *Server) Creator(value interface{}) {
+	s.DB.Create(value)
+}
+
+func (s *Server) String10() string {
 	out_string := make([]byte, 10)
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < 10; i++ {
@@ -39,7 +56,7 @@ func (s *Server) Post(ctx context.Context, in *pb.LongLink) (*pb.ShortLink, erro
 	if s.Storage == "inmemory" {
 		if _, ok := long[in.LongLink]; !ok {
 			for {
-				tmp := String10()
+				tmp := s.String10()
 				if _, ok := short[tmp]; !ok {
 					short[tmp] = in.LongLink
 					long[in.LongLink] = tmp
@@ -50,16 +67,16 @@ func (s *Server) Post(ctx context.Context, in *pb.LongLink) (*pb.ShortLink, erro
 		return &pb.ShortLink{ShortLink: long[in.LongLink]}, nil
 	}
 	var result database.Mapping
-	s.DB.Find(&result, "long=?", in.LongLink)
+	s.Finder(&result, "long=?", in.LongLink)
 	if result.Short == "" {
 		for {
-			tmp := String10()
-			s.DB.Find(&result, "short=?", tmp)
+			tmp := s.String10()
+			s.Finder(&result, "short=?", tmp)
 			if result.Short == tmp {
 				continue
 			}
-			result = database.Mapping{tmp, in.LongLink}
-			s.DB.Create(result)
+			result = database.Mapping{Short: tmp, Long: in.LongLink}
+			s.Creator(result)
 			break
 		}
 	}
@@ -77,7 +94,7 @@ func (s *Server) Get(ctx context.Context, in *pb.ShortLink) (*pb.LongLink, error
 		return &pb.LongLink{LongLink: short[in.ShortLink]}, nil
 	}
 	var result database.Mapping
-	s.DB.Find(&result, "short=?", in.ShortLink)
+	s.Finder(&result, "short=?", in.ShortLink)
 	if result.Long == "" {
 		return &pb.LongLink{LongLink: "Link is not exist"}, nil
 	}
