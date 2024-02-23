@@ -22,8 +22,8 @@ type Randomable interface {
 }
 
 type BaseHandle interface {
-	Finder(dest interface{}, left, right string)
-	Creator(value interface{})
+	Find(dest interface{}, left, right interface{})
+	Create(value interface{})
 }
 
 type Server struct {
@@ -32,11 +32,11 @@ type Server struct {
 	DB      *gorm.DB
 }
 
-func (s *Server) Finder(dest interface{}, left, right string) {
-	s.DB.Find(dest, left, right)
+func (s *Server) Find(dest interface{}, key, value interface{}) {
+	s.DB.Find(dest, key, value)
 }
 
-func (s *Server) Creator(value interface{}) {
+func (s *Server) Create(value interface{}) {
 	s.DB.Create(value)
 }
 
@@ -67,16 +67,16 @@ func (s *Server) Post(ctx context.Context, in *pb.LongLink) (*pb.ShortLink, erro
 		return &pb.ShortLink{ShortLink: long[in.LongLink]}, nil
 	}
 	var result database.Mapping
-	s.Finder(&result, "long=?", in.LongLink)
+	s.Find(&result, "long=?", in.LongLink)
 	if result.Short == "" {
 		for {
 			tmp := s.String10()
-			s.Finder(&result, "short=?", tmp)
+			s.Find(&result, "short=?", tmp)
 			if result.Short == tmp {
 				continue
 			}
 			result = database.Mapping{Short: tmp, Long: in.LongLink}
-			s.Creator(result)
+			s.Create(result)
 			break
 		}
 	}
@@ -94,7 +94,7 @@ func (s *Server) Get(ctx context.Context, in *pb.ShortLink) (*pb.LongLink, error
 		return &pb.LongLink{LongLink: short[in.ShortLink]}, nil
 	}
 	var result database.Mapping
-	s.Finder(&result, "short=?", in.ShortLink)
+	s.Find(&result, "short=?", in.ShortLink)
 	if result.Long == "" {
 		return &pb.LongLink{LongLink: "Link is not exist"}, nil
 	}
