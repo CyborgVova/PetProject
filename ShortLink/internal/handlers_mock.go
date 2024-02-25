@@ -34,9 +34,11 @@ func (m *MockRandomable) EXPECT() *MockRandomableMockRecorder {
 }
 
 // String10 mocks base method.
-func (m *MockRandomable) String10() {
+func (m *MockRandomable) String10() string {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "String10")
+	ret := m.ctrl.Call(m, "String10")
+	ret0, _ := ret[0].(string)
+	return ret0
 }
 
 // String10 indicates an expected call of String10.

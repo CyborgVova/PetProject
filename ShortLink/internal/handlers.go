@@ -18,7 +18,7 @@ var (
 const template = "_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 type Randomable interface {
-	String10()
+	String10() string
 }
 
 type BaseHandle interface {
@@ -28,19 +28,26 @@ type BaseHandle interface {
 
 type Server struct {
 	pb.UnimplementedLinkBuilderServer
-	Storage string
-	DB      *gorm.DB
+	Storage    string
+	HandleDB   BaseHandle
+	HandleRand Randomable
 }
 
-func (s *Server) Find(dest interface{}, key, value interface{}) {
-	s.DB.Find(dest, key, value)
+type HandleDB struct {
+	DB *gorm.DB
 }
 
-func (s *Server) Create(value interface{}) {
-	s.DB.Create(value)
+type HandleRand struct{}
+
+func (h *HandleDB) Find(dest interface{}, key, value interface{}) {
+	h.DB.Find(dest, key, value)
 }
 
-func (s *Server) String10() string {
+func (h *HandleDB) Create(value interface{}) {
+	h.DB.Create(value)
+}
+
+func (h *HandleRand) String10() string {
 	out_string := make([]byte, 10)
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < 10; i++ {
@@ -56,7 +63,7 @@ func (s *Server) Post(ctx context.Context, in *pb.LongLink) (*pb.ShortLink, erro
 	if s.Storage == "inmemory" {
 		if _, ok := long[in.LongLink]; !ok {
 			for {
-				tmp := s.String10()
+				tmp := s.HandleRand.String10()
 				if _, ok := short[tmp]; !ok {
 					short[tmp] = in.LongLink
 					long[in.LongLink] = tmp
@@ -67,16 +74,16 @@ func (s *Server) Post(ctx context.Context, in *pb.LongLink) (*pb.ShortLink, erro
 		return &pb.ShortLink{ShortLink: long[in.LongLink]}, nil
 	}
 	var result database.Mapping
-	s.Find(&result, "long=?", in.LongLink)
+	s.HandleDB.Find(&result, "long=?", in.LongLink)
 	if result.Short == "" {
 		for {
-			tmp := s.String10()
-			s.Find(&result, "short=?", tmp)
+			tmp := s.HandleRand.String10()
+			s.HandleDB.Find(&result, "short=?", tmp)
 			if result.Short == tmp {
 				continue
 			}
 			result = database.Mapping{Short: tmp, Long: in.LongLink}
-			s.Create(result)
+			s.HandleDB.Create(result)
 			break
 		}
 	}
@@ -94,7 +101,7 @@ func (s *Server) Get(ctx context.Context, in *pb.ShortLink) (*pb.LongLink, error
 		return &pb.LongLink{LongLink: short[in.ShortLink]}, nil
 	}
 	var result database.Mapping
-	s.Find(&result, "short=?", in.ShortLink)
+	s.HandleDB.Find(&result, "short=?", in.ShortLink)
 	if result.Long == "" {
 		return &pb.LongLink{LongLink: "Link is not exist"}, nil
 	}

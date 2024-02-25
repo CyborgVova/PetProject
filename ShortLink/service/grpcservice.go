@@ -17,7 +17,12 @@ func RunGrpc(storage string, db *gorm.DB) {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
-	pb.RegisterLinkBuilderServer(s, &internal.Server{Storage: storage, DB: db})
+	pb.RegisterLinkBuilderServer(s,
+		&internal.Server{
+			Storage:    storage,
+			HandleDB:   &internal.HandleDB{DB: db},
+			HandleRand: &internal.HandleRand{},
+		})
 	log.Printf("GRPC server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
 		panic(err)
