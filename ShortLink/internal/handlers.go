@@ -22,8 +22,8 @@ type Randomable interface {
 }
 
 type BaseHandle interface {
-	Find(dest interface{}, left, right interface{})
-	Create(value interface{})
+	Find(dest *database.Mapping, left, right string) *database.Mapping
+	Create(value *database.Mapping) *database.Mapping
 }
 
 type Server struct {
@@ -39,12 +39,14 @@ type HandleDB struct {
 
 type HandleRand struct{}
 
-func (h *HandleDB) Find(dest interface{}, key, value interface{}) {
+func (h *HandleDB) Find(dest *database.Mapping, key, value string) *database.Mapping {
 	h.DB.Find(dest, key, value)
+	return dest
 }
 
-func (h *HandleDB) Create(value interface{}) {
+func (h *HandleDB) Create(value *database.Mapping) *database.Mapping {
 	h.DB.Create(value)
+	return value
 }
 
 func (h *HandleRand) String10() string {
@@ -73,17 +75,16 @@ func (s *Server) Post(ctx context.Context, in *pb.LongLink) (*pb.ShortLink, erro
 		}
 		return &pb.ShortLink{ShortLink: long[in.LongLink]}, nil
 	}
-	var result database.Mapping
-	s.HandleDB.Find(&result, "long=?", in.LongLink)
+	var result = &database.Mapping{}
+	result = s.HandleDB.Find(result, "long=?", in.LongLink)
 	if result.Short == "" {
 		for {
 			tmp := s.HandleRand.String10()
-			s.HandleDB.Find(&result, "short=?", tmp)
+			result = s.HandleDB.Find(result, "short=?", tmp)
 			if result.Short == tmp {
 				continue
 			}
-			result = database.Mapping{Short: tmp, Long: in.LongLink}
-			s.HandleDB.Create(result)
+			result = s.HandleDB.Create(&database.Mapping{Short: tmp, Long: in.LongLink})
 			break
 		}
 	}
@@ -100,8 +101,8 @@ func (s *Server) Get(ctx context.Context, in *pb.ShortLink) (*pb.LongLink, error
 		}
 		return &pb.LongLink{LongLink: short[in.ShortLink]}, nil
 	}
-	var result database.Mapping
-	s.HandleDB.Find(&result, "short=?", in.ShortLink)
+	var result = &database.Mapping{}
+	result = s.HandleDB.Find(result, "short=?", in.ShortLink)
 	if result.Long == "" {
 		return &pb.LongLink{LongLink: "Link is not exist"}, nil
 	}
