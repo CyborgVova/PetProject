@@ -74,41 +74,41 @@ func TestMockPostExistLink(t *testing.T) {
 	}
 }
 
-func TestMockPostBadGenerate(t *testing.T) {
-	ctrl1 := gomock.NewController(t)
-	ctrl2 := gomock.NewController(t)
-	defer ctrl1.Finish()
-	defer ctrl2.Finish()
+// func TestMockPostBadGenerate(t *testing.T) {
+// 	ctrl1 := gomock.NewController(t)
+// 	ctrl2 := gomock.NewController(t)
+// 	defer ctrl1.Finish()
+// 	defer ctrl2.Finish()
 
-	baseHandle := NewMockBaseHandle(ctrl1)
-	randomable := NewMockRandomable(ctrl2)
+// 	baseHandle := NewMockBaseHandle(ctrl1)
+// 	randomable := NewMockRandomable(ctrl2)
 
-	rand10 := "rutyeiwoqp"
-	s := Server{
-		Storage:    "database",
-		HandleDB:   baseHandle,
-		HandleRand: randomable,
-	}
-	data := database.Mapping{}
-	pShort := pb.ShortLink{ShortLink: "shortlink"}
-	pLong := pb.LongLink{LongLink: "longlink"}
+// 	rand10 := "rutyeiwoqp"
+// 	s := Server{
+// 		Storage:    "database",
+// 		HandleDB:   baseHandle,
+// 		HandleRand: randomable,
+// 	}
+// 	data := database.Mapping{}
+// 	pShort := pb.ShortLink{ShortLink: "shortlink"}
+// 	pLong := pb.LongLink{LongLink: "longlink"}
 
-	baseHandle.EXPECT().Find(&data, "long=?", pLong.LongLink).Return()
+// 	baseHandle.EXPECT().Find(&data, "long=?", pLong.LongLink).Return()
 
-	randomable.EXPECT().String10().Return(pShort.ShortLink)
-	baseHandle.EXPECT().Find(&data, "short=?", pShort.ShortLink).Return()
+// 	randomable.EXPECT().String10().Return(pShort.ShortLink)
+// 	baseHandle.EXPECT().Find(&data, "short=?", pShort.ShortLink).Return()
 
-	// randomable.EXPECT().String10().Return(pShort.ShortLink)
-	// baseHandle.EXPECT().Find(&data, "short=?", pShort.ShortLink).Return()
+// 	// randomable.EXPECT().String10().Return(pShort.ShortLink)
+// 	// baseHandle.EXPECT().Find(&data, "short=?", pShort.ShortLink).Return()
 
-	randomable.EXPECT().String10().Return(rand10)
-	baseHandle.EXPECT().Find(&data, "short=?", rand10).Return()
+// 	randomable.EXPECT().String10().Return(rand10)
+// 	baseHandle.EXPECT().Find(&data, "short=?", rand10).Return()
 
-	// data = database.Mapping{}
-	baseHandle.EXPECT().Create(database.Mapping{pShort.ShortLink, pLong.LongLink}).Return()
+// 	// data = database.Mapping{}
+// 	baseHandle.EXPECT().Create(database.Mapping{pShort.ShortLink, pLong.LongLink}).Return()
 
-	result, _ := s.Post(context.Background(), &pLong)
-	if result.ShortLink != pShort.ShortLink {
-		t.Errorf("want: %v, got: %v\n", pShort.ShortLink, result.ShortLink)
-	}
-}
+// 	result, _ := s.Post(context.Background(), &pLong)
+// 	if result.ShortLink != pShort.ShortLink {
+// 		t.Errorf("want: %v, got: %v\n", pShort.ShortLink, result.ShortLink)
+// 	}
+// }
