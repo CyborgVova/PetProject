@@ -6,6 +6,7 @@ package internal
 
 import (
 	reflect "reflect"
+	database "shortlink/database"
 
 	gomock "github.com/golang/mock/gomock"
 )
@@ -71,9 +72,11 @@ func (m *MockBaseHandle) EXPECT() *MockBaseHandleMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockBaseHandle) Create(value interface{}) {
+func (m *MockBaseHandle) Create(value *database.Mapping) *database.Mapping {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Create", value)
+	ret := m.ctrl.Call(m, "Create", value)
+	ret0, _ := ret[0].(*database.Mapping)
+	return ret0
 }
 
 // Create indicates an expected call of Create.
@@ -83,9 +86,11 @@ func (mr *MockBaseHandleMockRecorder) Create(value interface{}) *gomock.Call {
 }
 
 // Find mocks base method.
-func (m *MockBaseHandle) Find(dest, left, right interface{}) {
+func (m *MockBaseHandle) Find(dest *database.Mapping, left, right string) *database.Mapping {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Find", dest, left, right)
+	ret := m.ctrl.Call(m, "Find", dest, left, right)
+	ret0, _ := ret[0].(*database.Mapping)
+	return ret0
 }
 
 // Find indicates an expected call of Find.
