@@ -75,13 +75,11 @@ func TestMockPostExistLink(t *testing.T) {
 }
 
 func TestMockPostBadGenerate(t *testing.T) {
-	ctrl1 := gomock.NewController(t)
-	ctrl2 := gomock.NewController(t)
-	defer ctrl1.Finish()
-	defer ctrl2.Finish()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-	baseHandle := NewMockBaseHandle(ctrl1)
-	randomable := NewMockRandomable(ctrl2)
+	baseHandle := NewMockBaseHandle(ctrl)
+	randomable := NewMockRandomable(ctrl)
 
 	rand10 := "rutyeiwoqp"
 	s := Server{
@@ -89,26 +87,26 @@ func TestMockPostBadGenerate(t *testing.T) {
 		HandleDB:   baseHandle,
 		HandleRand: randomable,
 	}
-	data := database.Mapping{}
+	// data := database.Mapping{}
 	pShort := pb.ShortLink{ShortLink: "shortlink"}
 	pLong := pb.LongLink{LongLink: "longlink"}
 
-	baseHandle.EXPECT().Find(&data, "long=?", pLong.LongLink).Return()
+	gomock.InOrder(
+		baseHandle.EXPECT().Find(&database.Mapping{}, "long=?", pLong.LongLink).Return(),
 
-	randomable.EXPECT().String10().Return(pShort.ShortLink)
-	baseHandle.EXPECT().Find(&data, "short=?", pShort.ShortLink).Return()
+		randomable.EXPECT().String10().Return(pShort.ShortLink),
+		baseHandle.EXPECT().Find(&database.Mapping{Short: pShort.ShortLink, Long: "some long link"}, "short=?", pShort.ShortLink).Return(),
 
-	// randomable.EXPECT().String10().Return(pShort.ShortLink)
-	// baseHandle.EXPECT().Find(&data, "short=?", pShort.ShortLink).Return()
+		randomable.EXPECT().String10().Return(pShort.ShortLink),
+		baseHandle.EXPECT().Find(&database.Mapping{Short: pShort.ShortLink, Long: "some long link"}, "short=?", pShort.ShortLink).Return(),
 
-	randomable.EXPECT().String10().Return(rand10)
-	baseHandle.EXPECT().Find(&data, "short=?", rand10).Return()
+		randomable.EXPECT().String10().Return(rand10),
+		baseHandle.EXPECT().Find(&database.Mapping{}, "short=?", rand10).Return(),
 
-	// data = database.Mapping{}
-	baseHandle.EXPECT().Create(database.Mapping{pShort.ShortLink, pLong.LongLink}).Return()
-
+		baseHandle.EXPECT().Create(database.Mapping{Short: rand10, Long: pLong.LongLink}).Return(),
+	)
 	result, _ := s.Post(context.Background(), &pLong)
-	if result.ShortLink != pShort.ShortLink {
-		t.Errorf("want: %v, got: %v\n", pShort.ShortLink, result.ShortLink)
+	if result.ShortLink != rand10 {
+		t.Errorf("want: %v, got: %v\n", rand10, result.ShortLink)
 	}
 }
