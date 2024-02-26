@@ -9,6 +9,99 @@ import (
 	"github.com/golang/mock/gomock"
 )
 
+func TestPostEmptyRequest(t *testing.T) {
+	tests := []struct {
+		name string
+		s    Server
+		long pb.LongLink
+	}{
+		{
+			name: "Inmemory",
+			s: Server{
+				Storage: "inmemory",
+			},
+			long: pb.LongLink{LongLink: ""},
+		},
+		{
+			name: "Database",
+			s: Server{
+				Storage: "database",
+			},
+			long: pb.LongLink{LongLink: ""},
+		},
+	}
+	for _, test := range tests {
+		go t.Run(test.name, func(t *testing.T) {
+			result, _ := test.s.Post(context.Background(), &test.long)
+			want := "Empty request field"
+			if result.ShortLink != want {
+				t.Errorf("want: %s, got: %s\n", want, result.ShortLink)
+			}
+		})
+	}
+}
+
+func TestMockPostInmemoryNewEntry(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	randomable := NewMockRandomable(ctrl)
+
+	shortShare := InMemoryMap{
+		"short1": "long1",
+		"short2": "long2",
+		"short3": "long3",
+	}
+	longShare := InMemoryMap{
+		"long1": "short1",
+		"long2": "short2",
+		"long3": "short3",
+	}
+	srv := Server{
+		Storage:    "inmemory",
+		HandleRand: randomable,
+		Short:      shortShare,
+		Long:       longShare,
+	}
+	tests := []struct {
+		name string
+		s    Server
+	}{
+		{
+			name: "First",
+			s:    srv,
+		}, {
+			name: "Second",
+			s:    srv,
+		}, {
+			name: "Third",
+			s:    srv,
+		},
+	}
+
+	pShort := pb.ShortLink{ShortLink: "shortlink"}
+	pLong := pb.LongLink{LongLink: "longlink"}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			randomable.EXPECT().String10().Return(pShort.ShortLink)
+			result, _ := test.s.Post(context.Background(), &pLong)
+			got := result.ShortLink
+			want := pShort.ShortLink
+			if got != want {
+				t.Errorf("want: %s, got: %s", want, got)
+			}
+		})
+	}
+}
+
+func TestPostInmemoryExistLink(t *testing.T) {
+}
+
+func TestPostInmemoryBadGenerate(t *testing.T) {
+
+}
+
 func TestMockPostNewEntry(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -68,19 +161,19 @@ func TestMockPostBadGenerate(t *testing.T) {
 	pShort := pb.ShortLink{ShortLink: "shortlink"}
 	pLong := pb.LongLink{LongLink: "longlink"}
 
-	gomock.InOrder(
-		baseHandle.EXPECT().Find(&database.Mapping{}, "long=?", pLong.LongLink).Return(&database.Mapping{}),
+	baseHandle.EXPECT().Find(&database.Mapping{}, "long=?", pLong.LongLink).Return(&database.Mapping{})
 
-		randomable.EXPECT().String10().Return(pShort.ShortLink),
-		baseHandle.EXPECT().Find(&database.Mapping{}, "short=?", pShort.ShortLink).Return(&database.Mapping{Short: pShort.ShortLink, Long: "some link"}),
+	randomable.EXPECT().String10().Return(pShort.ShortLink)
+	baseHandle.EXPECT().Find(&database.Mapping{}, "short=?", pShort.ShortLink).Return(&database.Mapping{Short: pShort.ShortLink, Long: "some link"})
 
-		randomable.EXPECT().String10().Return(pShort.ShortLink),
-		baseHandle.EXPECT().Find(&database.Mapping{Short: pShort.ShortLink, Long: "some link"}, "short=?", pShort.ShortLink).Return(&database.Mapping{Short: pShort.ShortLink, Long: "some link"}),
+	randomable.EXPECT().String10().Return(pShort.ShortLink)
+	baseHandle.EXPECT().Find(&database.Mapping{Short: pShort.ShortLink, Long: "some link"}, "short=?", pShort.ShortLink).Return(&database.Mapping{Short: pShort.ShortLink, Long: "some link"})
 
-		randomable.EXPECT().String10().Return(rand10),
-		baseHandle.EXPECT().Find(&database.Mapping{Short: pShort.ShortLink, Long: "some link"}, "short=?", rand10).Return(&database.Mapping{}),
-	)
-	baseHandle.EXPECT().Create(&database.Mapping{rand10, pLong.LongLink}).Return(&database.Mapping{rand10, pLong.LongLink})
+	randomable.EXPECT().String10().Return(rand10)
+	baseHandle.EXPECT().Find(&database.Mapping{Short: pShort.ShortLink, Long: "some link"}, "short=?", rand10).Return(&database.Mapping{})
+
+	baseHandle.EXPECT().Create(&database.Mapping{Short: rand10, Long: pLong.LongLink}).Return(&database.Mapping{Short: rand10, Long: pLong.LongLink})
+
 	result, _ := s.Post(context.Background(), &pLong)
 	if result.ShortLink != rand10 {
 		t.Errorf("want: %v, got: %v\n", rand10, result.ShortLink)

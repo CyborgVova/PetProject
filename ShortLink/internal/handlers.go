@@ -10,10 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var (
-	long  = map[string]string{}
-	short = map[string]string{}
-)
+type InMemoryMap map[string]string
 
 const template = "_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
@@ -31,6 +28,8 @@ type Server struct {
 	Storage    string
 	HandleDB   BaseHandle
 	HandleRand Randomable
+	Short      InMemoryMap
+	Long       InMemoryMap
 }
 
 type HandleDB struct {
@@ -63,17 +62,17 @@ func (s *Server) Post(ctx context.Context, in *pb.LongLink) (*pb.ShortLink, erro
 		return &pb.ShortLink{ShortLink: "Empty request field"}, nil
 	}
 	if s.Storage == "inmemory" {
-		if _, ok := long[in.LongLink]; !ok {
+		if _, ok := s.Long[in.LongLink]; !ok {
 			for {
 				tmp := s.HandleRand.String10()
-				if _, ok := short[tmp]; !ok {
-					short[tmp] = in.LongLink
-					long[in.LongLink] = tmp
+				if _, ok := s.Short[tmp]; !ok {
+					s.Short[tmp] = in.LongLink
+					s.Long[in.LongLink] = tmp
 					break
 				}
 			}
 		}
-		return &pb.ShortLink{ShortLink: long[in.LongLink]}, nil
+		return &pb.ShortLink{ShortLink: s.Long[in.LongLink]}, nil
 	}
 	var result = &database.Mapping{}
 	result = s.HandleDB.Find(result, "long=?", in.LongLink)
@@ -96,10 +95,10 @@ func (s *Server) Get(ctx context.Context, in *pb.ShortLink) (*pb.LongLink, error
 		return &pb.LongLink{LongLink: "Empty request field"}, nil
 	}
 	if s.Storage == "inmemory" {
-		if _, ok := short[in.ShortLink]; !ok {
+		if _, ok := s.Short[in.ShortLink]; !ok {
 			return &pb.LongLink{LongLink: "Link is not exist"}, nil
 		}
-		return &pb.LongLink{LongLink: short[in.ShortLink]}, nil
+		return &pb.LongLink{LongLink: s.Short[in.ShortLink]}, nil
 	}
 	var result = &database.Mapping{}
 	result = s.HandleDB.Find(result, "short=?", in.ShortLink)

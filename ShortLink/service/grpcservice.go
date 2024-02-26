@@ -22,6 +22,8 @@ func RunGrpc(storage string, db *gorm.DB) {
 			Storage:    storage,
 			HandleDB:   &internal.HandleDB{DB: db},
 			HandleRand: &internal.HandleRand{},
+			Short:      internal.InMemoryMap{},
+			Long:       internal.InMemoryMap{},
 		})
 	log.Printf("GRPC server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
