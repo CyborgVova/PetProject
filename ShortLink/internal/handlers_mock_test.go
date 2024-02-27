@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"fmt"
 
 	"shortlink/database"
 	pb "shortlink/proto"
@@ -266,5 +267,146 @@ func TestMockPostBadGenerate(t *testing.T) {
 	result, _ := s.Post(context.Background(), &pLong)
 	if result.ShortLink != rand10 {
 		t.Errorf("want: %v, got: %v\n", rand10, result.ShortLink)
+	}
+}
+
+func TestGetEmptyRequest(t *testing.T) {
+	s := Server{
+		Storage: "inmemory",
+	}
+	pShort := pb.ShortLink{}
+	result, _ := s.Get(context.Background(), &pShort)
+	got := result.LongLink
+	want := "Empty request field"
+	if got != want {
+		t.Errorf("want: %s, got: %s\n", want, got)
+	}
+}
+
+func TestGetInmemoryLinkNotExist(t *testing.T) {
+	shortShare := InMemoryMap{
+		"short1": "long1",
+		"short2": "long2",
+		"short3": "long3",
+	}
+	longShare := InMemoryMap{
+		"long1": "short1",
+		"long2": "short2",
+		"long3": "short3",
+	}
+	s := Server{
+		Storage: "inmemory",
+		Short:   shortShare,
+		Long:    longShare,
+	}
+
+	pLong := pb.LongLink{LongLink: "Link is not exist"}
+	pShort := pb.ShortLink{ShortLink: "short4"}
+
+	result, _ := s.Get(context.Background(), &pShort)
+
+	got := result.LongLink
+	want := pLong.LongLink
+	if got != want {
+		t.Errorf("want: %s, got: %s\n", want, got)
+	}
+}
+
+func TestGetInmemoryGoodRequest(t *testing.T) {
+	list := []string{
+		"short3",
+		"short1",
+		"short2",
+	}
+	shortShare := InMemoryMap{
+		"short1": "long1",
+		"short2": "long2",
+		"short3": "long3",
+	}
+	longShare := InMemoryMap{
+		"long1": "short1",
+		"long2": "short2",
+		"long3": "short3",
+	}
+	s := Server{
+		Storage: "inmemory",
+		Short:   shortShare,
+		Long:    longShare,
+	}
+
+	for i := 0; i < len(list); i++ {
+		t.Run("Test "+list[i], func(t *testing.T) {
+			pShort := pb.ShortLink{ShortLink: list[i]}
+			pLong := pb.LongLink{LongLink: shortShare[list[i]]}
+
+			result, _ := s.Get(context.Background(), &pShort)
+
+			got := result.LongLink
+			want := pLong.LongLink
+			if got != want {
+				t.Errorf("want: %s, got: %s\n", want, got)
+			}
+		})
+	}
+}
+
+func TestGetMockLinkGoodRequest(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	baseHandle := NewMockBaseHandle(ctrl)
+
+	s := Server{
+		Storage:  "database",
+		HandleDB: baseHandle,
+	}
+	shortShare := []string{
+		"short1",
+		"short2",
+		"short3",
+	}
+	longShare := []string{
+		"long1",
+		"long2",
+		"long3",
+	}
+
+	for i := 0; i < len(shortShare); i++ {
+		t.Run(fmt.Sprintf("Test %d", i), func(t *testing.T) {
+			pLong := pb.LongLink{LongLink: longShare[i]}
+			pShort := pb.ShortLink{ShortLink: shortShare[i]}
+			baseHandle.EXPECT().Find(&database.Mapping{}, "short=?", pShort.ShortLink).
+				Return(&database.Mapping{Short: pShort.ShortLink, Long: pLong.LongLink})
+			result, _ := s.Get(context.Background(), &pShort)
+			got := result.LongLink
+			want := pLong.LongLink
+			if got != want {
+				t.Errorf("want: %s, got: %s\n", want, got)
+			}
+		})
+	}
+}
+
+func TestGetMockLinkNotExist(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	baseHandle := NewMockBaseHandle(ctrl)
+
+	s := Server{
+		Storage:  "database",
+		HandleDB: baseHandle,
+	}
+	pShort := pb.ShortLink{ShortLink: "shortlink"}
+	pLong := pb.LongLink{LongLink: "longlink"}
+
+	baseHandle.EXPECT().Find(&database.Mapping{}, "short=?", pShort.ShortLink).
+		Return(&database.Mapping{Short: pShort.ShortLink, Long: pLong.LongLink})
+	result, _ := s.Get(context.Background(), &pShort)
+
+	got := result.LongLink
+	want := pLong.LongLink
+	if got != want {
+		t.Errorf("want: %s, got: %s\n", want, got)
 	}
 }
