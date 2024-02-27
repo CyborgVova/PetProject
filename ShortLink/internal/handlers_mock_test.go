@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+
 	"shortlink/database"
 	pb "shortlink/proto"
 	"testing"
@@ -13,26 +14,24 @@ func TestPostEmptyRequest(t *testing.T) {
 	tests := []struct {
 		name string
 		s    Server
-		long pb.LongLink
 	}{
 		{
 			name: "Inmemory",
 			s: Server{
 				Storage: "inmemory",
 			},
-			long: pb.LongLink{LongLink: ""},
 		},
 		{
 			name: "Database",
 			s: Server{
 				Storage: "database",
 			},
-			long: pb.LongLink{LongLink: ""},
 		},
 	}
+	long := pb.LongLink{LongLink: ""}
 	for _, test := range tests {
-		go t.Run(test.name, func(t *testing.T) {
-			result, _ := test.s.Post(context.Background(), &test.long)
+		t.Run(test.name, func(t *testing.T) {
+			result, _ := test.s.Post(context.Background(), &long)
 			want := "Empty request field"
 			if result.ShortLink != want {
 				t.Errorf("want: %s, got: %s\n", want, result.ShortLink)
@@ -40,7 +39,6 @@ func TestPostEmptyRequest(t *testing.T) {
 		})
 	}
 }
-
 func TestMockPostInmemoryNewEntry(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -63,6 +61,15 @@ func TestMockPostInmemoryNewEntry(t *testing.T) {
 		Short:      shortShare,
 		Long:       longShare,
 	}
+	pShort := []pb.ShortLink{
+		{ShortLink: "shortlink1"},
+		{ShortLink: "shortlink2"},
+		{ShortLink: "shortlink3"}}
+	pLong := []pb.LongLink{
+		{LongLink: "longlink1"},
+		{LongLink: "longlink2"},
+		{LongLink: "longlink3"}}
+
 	tests := []struct {
 		name string
 		s    Server
@@ -79,15 +86,12 @@ func TestMockPostInmemoryNewEntry(t *testing.T) {
 		},
 	}
 
-	pShort := pb.ShortLink{ShortLink: "shortlink"}
-	pLong := pb.LongLink{LongLink: "longlink"}
-
-	for _, test := range tests {
+	for i, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			randomable.EXPECT().String10().Return(pShort.ShortLink)
-			result, _ := test.s.Post(context.Background(), &pLong)
+			randomable.EXPECT().String10().Return(pShort[i].ShortLink)
+			result, _ := test.s.Post(context.Background(), &pLong[i])
 			got := result.ShortLink
-			want := pShort.ShortLink
+			want := pShort[i].ShortLink
 			if got != want {
 				t.Errorf("want: %s, got: %s", want, got)
 			}
@@ -96,10 +100,95 @@ func TestMockPostInmemoryNewEntry(t *testing.T) {
 }
 
 func TestPostInmemoryExistLink(t *testing.T) {
+	shortShare := InMemoryMap{
+		"short1": "long1",
+		"short2": "long2",
+		"short3": "long3",
+	}
+	longShare := InMemoryMap{
+		"long1": "short1",
+		"long2": "short2",
+		"long3": "short3",
+	}
+	srv := Server{
+		Storage: "inmemory",
+		Short:   shortShare,
+		Long:    longShare,
+	}
+	pLong := []pb.LongLink{
+		{LongLink: "long1"},
+		{LongLink: "long2"},
+		{LongLink: "long3"}}
+
+	tests := []struct {
+		name string
+		s    Server
+	}{
+		{
+			name: "First",
+			s:    srv,
+		}, {
+			name: "Second",
+			s:    srv,
+		}, {
+			name: "Third",
+			s:    srv,
+		},
+	}
+
+	for i, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result, _ := test.s.Post(context.Background(), &pLong[i])
+			got := result.ShortLink
+			want := test.s.Long[pLong[i].LongLink]
+			if got != want {
+				t.Errorf("want: %s, got: %s", want, got)
+			}
+		})
+	}
 }
 
 func TestPostInmemoryBadGenerate(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
+	randomable := NewMockRandomable(ctrl)
+
+	list := []string{
+		"short3",
+		"short1",
+		"short2",
+	}
+	shortShare := InMemoryMap{
+		"short1": "long1",
+		"short2": "long2",
+		"short3": "long3",
+	}
+	longShare := InMemoryMap{
+		"long1": "short1",
+		"long2": "short2",
+		"long3": "short3",
+	}
+	s := Server{
+		Storage:    "inmemory",
+		HandleRand: randomable,
+		Short:      shortShare,
+		Long:       longShare,
+	}
+	pLong := pb.LongLink{LongLink: "long4"}
+	pShort := pb.ShortLink{ShortLink: "short4"}
+
+	for i := 0; i < len(list); i++ {
+		randomable.EXPECT().String10().Return(list[i])
+	}
+	randomable.EXPECT().String10().Return(pShort.ShortLink)
+
+	result, _ := s.Post(context.Background(), &pLong)
+	want := longShare[pLong.LongLink]
+	got := result.ShortLink
+	if got != want {
+		t.Errorf("want: %s, got: %s\n", want, got)
+	}
 }
 
 func TestMockPostNewEntry(t *testing.T) {
