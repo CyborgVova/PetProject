@@ -2,7 +2,7 @@ version: '3'
 
 services:
   elasticsearch:
-    image:  cyborgvova/elasticsearch:latest
+    image:  cyborgvova/elasticsearch
     container_name: elastic
     restart:  always
     networks:
@@ -17,6 +17,7 @@ services:
 
   server:
     build: .
+    image: cyborgvova/findaround
     container_name: restaurant
     restart:  always
     networks:
